@@ -1,0 +1,24 @@
+version: '2.1'
+services:
+  servicevalsonarqube:
+    image: sonarqube
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://servicevalsonarqube:9000"]
+      interval: 40s
+      timeout: 10s
+      retries: 3
+    ports:
+      - "9000:9000"
+  servicevaljenkins:
+    build: .
+    volumes:
+      - ./jenkins_home:/var/jenkins_home
+    ports:
+      - "8080:8080"
+
+
+    depends_on:
+      servicevalsonarqube:
+         condition: service_healthy
+  
+  

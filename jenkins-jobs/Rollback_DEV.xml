@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties/>
+  <scm class="hudson.scm.NullSCM"/>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.tasks.Shell>
+      <command>rm -f FlowCoverageApp.bar
+cp /var/lib/jenkins/jobs/FailureScenario/workspace/FlowCoverageApp_Rollback.bar /var/lib/jenkins/jobs/FailureScenario/workspace/FlowCoverageApp.bar   </command>
+    </hudson.tasks.Shell>
+  </builders>
+  <publishers>
+    <com.urbancode.ds.jenkins.plugins.urbandeploypublisher.UrbanDeployPublisher plugin="ibm-ucdeploy-publisher@1.2.9">
+      <siteName>LabUrbanCodeDeployV2</siteName>
+      <useAnotherUser>false</useAnotherUser>
+      <anotherUser>admin</anotherUser>
+      <anotherPassword>Tx+1aZPJ65ednDmHYzgbSBLRneubMboYSQ7EdEwbfXM=</anotherPassword>
+      <component>IIB_ValidFlow_Component</component>
+      <baseDir>/var/lib/jenkins/jobs/FailureScenario/workspace</baseDir>
+      <directoryOffset></directoryOffset>
+      <fileIncludePatterns>FlowCoverageApp.bar</fileIncludePatterns>
+      <fileExcludePatterns></fileExcludePatterns>
+      <versionName>${JOB_NAME}${BUILD_ID}</versionName>
+      <skip>false</skip>
+      <deploy>true</deploy>
+      <deployApp>IIB_ValidFlow_Application</deployApp>
+      <deployEnv>TEST_ENV</deployEnv>
+      <deployProc>IIB_ValidFlow_ApplicationProcess</deployProc>
+      <properties></properties>
+      <description></description>
+    </com.urbancode.ds.jenkins.plugins.urbandeploypublisher.UrbanDeployPublisher>
+  </publishers>
+  <buildWrappers/>
+</project>

@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<flow-definition plugin="workflow-job@2.12.2">
+  <actions/>
+  <description></description>
+  <keepDependencies>false</keepDependencies>
+  <properties>
+    <org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+      <triggers/>
+    </org.jenkinsci.plugins.workflow.job.properties.PipelineTriggersJobProperty>
+  </properties>
+  <definition class="org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition" plugin="workflow-cps@2.41">
+    <script>node {
+   def mvnHome
+  
+   dir(&apos;spring-petclinic&apos;) {
+     stage(&apos;Preparation&apos;) { 
+       
+      // Get some code from a GitHub repository
+        git &apos;https://github.com/spring-projects/spring-petclinic.git&apos;
+     
+    }
+    stage(&apos;Build&apos;) {
+            sh &apos;mvn clean package&apos;
+    }
+    stage(&apos;Results&apos;) {
+        junit &apos;**/target/surefire-reports/TEST-*.xml&apos;
+        archive &apos;target/*.jar&apos;
+    }
+   }
+}</script>
+    <sandbox>true</sandbox>
+  </definition>
+  <triggers/>
+  <disabled>false</disabled>
+</flow-definition>

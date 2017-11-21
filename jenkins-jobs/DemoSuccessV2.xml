@@ -1,0 +1,253 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<project>
+  <actions/>
+  <description></description>
+  <keepDependencies>true</keepDependencies>
+  <properties/>
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@3.0.5">
+    <configVersion>2</configVersion>
+    <userRemoteConfigs>
+      <hudson.plugins.git.UserRemoteConfig>
+        <url>/var/git-repo/codeCovgSuccess.git</url>
+      </hudson.plugins.git.UserRemoteConfig>
+    </userRemoteConfigs>
+    <branches>
+      <hudson.plugins.git.BranchSpec>
+        <name>*/master</name>
+      </hudson.plugins.git.BranchSpec>
+    </branches>
+    <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+    <submoduleCfg class="list"/>
+    <extensions/>
+  </scm>
+  <canRoam>true</canRoam>
+  <disabled>false</disabled>
+  <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+  <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+  <triggers/>
+  <concurrentBuild>false</concurrentBuild>
+  <builders>
+    <hudson.plugins.sonar.SonarRunnerBuilder plugin="sonar@2.6.1">
+      <project>/opt/sonar-scanner-3.0.0.702/conf/sonar-scanner-TestCodeV2.properties</project>
+      <properties></properties>
+      <javaOpts></javaOpts>
+      <additionalArguments></additionalArguments>
+      <jdk>(Inherit From Job)</jdk>
+      <task></task>
+    </hudson.plugins.sonar.SonarRunnerBuilder>
+    <hudson.tasks.Ant plugin="ant@1.4">
+      <targets></targets>
+      <antName>1.10.1</antName>
+      <buildFile>FlowCoverageApp\build.xml</buildFile>
+    </hudson.tasks.Ant>
+  </builders>
+  <publishers>
+    <quality.gates.jenkins.plugin.QGPublisher plugin="quality-gates@2.7-SNAPSHOT">
+      <jobConfigData>
+        <projectKey>FlowsV2</projectKey>
+        <sonarInstanceName>SonarQualityGate</sonarInstanceName>
+        <ignoreWarnings>false</ignoreWarnings>
+      </jobConfigData>
+      <buildDecision>
+        <qualityGatesProvider>
+          <qualityGateResponseParser/>
+          <sonarHttpRequester/>
+          <sonarInstanceValidationService/>
+        </qualityGatesProvider>
+      </buildDecision>
+      <jobConfigurationService/>
+      <jobExecutionService/>
+    </quality.gates.jenkins.plugin.QGPublisher>
+    <hudson.plugins.textfinder.TextFinderPublisher plugin="text-finder@1.10">
+      <regexp>Quality Gates plugin build passed: TRUE</regexp>
+      <succeedIfFound>true</succeedIfFound>
+      <unstableIfFound>false</unstableIfFound>
+      <alsoCheckConsoleOutput>true</alsoCheckConsoleOutput>
+    </hudson.plugins.textfinder.TextFinderPublisher>
+    <org.jenkins__ci.plugins.flexible__publish.FlexiblePublisher plugin="flexible-publish@0.15.2">
+      <publishers>
+        <org.jenkins__ci.plugins.flexible__publish.ConditionalPublisher>
+          <condition class="org.jenkins_ci.plugins.run_condition.core.FileExistsCondition" plugin="run-condition@1.0">
+            <file>FlowCoverageApp.bar</file>
+            <baseDir class="org.jenkins_ci.plugins.run_condition.common.BaseDirectory$Workspace"/>
+          </condition>
+          <publisherList>
+            <com.urbancode.ds.jenkins.plugins.urbandeploypublisher.UrbanDeployPublisher plugin="ibm-ucdeploy-publisher@1.2.9">
+              <siteName>LabUrbanCodeDeployV2</siteName>
+              <useAnotherUser>false</useAnotherUser>
+              <anotherUser>admin</anotherUser>
+              <anotherPassword>GrNH6tEOdLgvgWsni+l++B9sg+A8fMj06Q/jo8b866E=</anotherPassword>
+              <component>IIB_ValidFlow_Component</component>
+              <baseDir>${WORKSPACE}</baseDir>
+              <directoryOffset></directoryOffset>
+              <fileIncludePatterns>FlowCoverageApp.bar</fileIncludePatterns>
+              <fileExcludePatterns></fileExcludePatterns>
+              <versionName>${JOB_NAME}${BUILD_ID}</versionName>
+              <skip>false</skip>
+              <deploy>true</deploy>
+              <deployApp>IIB_ValidFlow_Application</deployApp>
+              <deployEnv>TEST_ENV</deployEnv>
+              <deployProc>IIB_ValidFlow_ApplicationProcess</deployProc>
+              <properties></properties>
+              <description></description>
+            </com.urbancode.ds.jenkins.plugins.urbandeploypublisher.UrbanDeployPublisher>
+            <hudson.plugins.postbuildtask.PostbuildTask plugin="postbuild-task@1.8">
+              <tasks>
+                <hudson.plugins.postbuildtask.TaskProperties>
+                  <logTexts>
+                    <hudson.plugins.postbuildtask.LogProperties>
+                      <logText>The deployment SUCCEEDED. See the UrbanCode Deploy deployment logs for details</logText>
+                      <operator>AND</operator>
+                    </hudson.plugins.postbuildtask.LogProperties>
+                  </logTexts>
+                  <EscalateStatus>false</EscalateStatus>
+                  <RunIfJobSuccessful>false</RunIfJobSuccessful>
+                  <script>./executeServiceVal.sh&#xd;
+&#xd;
+##Start   : Call Message Flow Coverage Tool##&#xd;
+java -jar codecovg.jar FlowCoverageApp tracemq.xml&#xd;
+&#xd;
+COVERAGE_RESULT=$(awk &apos;FNR &gt; 1 { print $5 }&apos; CoverageResult.csv)&#xd;
+echo COVERAGE_RESULT=$COVERAGE_RESULT &gt; EnvironmentVar_${BUILD_ID}.properties&#xd;
+cd JunitTest&#xd;
+TOTALTESTCASES=$(awk &apos;/tests/ {print $6}&apos; FS=&apos;&quot;&apos; Report.xml)&#xd;
+TOTALTESTFAIL=$(awk &apos;/tests/ {print $8}&apos; FS=&apos;&quot;&apos; Report.xml)&#xd;
+cd ..&#xd;
+echo TOTALTESTCASES=$TOTALTESTCASES &gt;&gt; EnvironmentVar_${BUILD_ID}.properties&#xd;
+echo TOTALTESTFAIL=$TOTALTESTFAIL &gt;&gt; EnvironmentVar_${BUILD_ID}.properties</script>
+                </hudson.plugins.postbuildtask.TaskProperties>
+              </tasks>
+            </hudson.plugins.postbuildtask.PostbuildTask>
+            <hudson.tasks.junit.JUnitResultArchiver plugin="junit@1.19">
+              <testResults>JunitTest/Report.xml</testResults>
+              <keepLongStdio>false</keepLongStdio>
+              <healthScaleFactor>1.0</healthScaleFactor>
+              <allowEmptyResults>false</allowEmptyResults>
+            </hudson.tasks.junit.JUnitResultArchiver>
+            <hudson.plugins.plot.PlotPublisher plugin="plot@1.9">
+              <plots>
+                <hudson.plugins.plot.Plot>
+                  <title>Message Flow Coverage Tool</title>
+                  <yaxis>Percentage of nodes covered</yaxis>
+                  <series>
+                    <hudson.plugins.plot.CSVSeries>
+                      <file>CoverageResult.csv</file>
+                      <label></label>
+                      <fileType>csv</fileType>
+                      <inclusionFlag>OFF</inclusionFlag>
+                      <exclusionValues></exclusionValues>
+                      <url></url>
+                      <displayTableFlag>false</displayTableFlag>
+                    </hudson.plugins.plot.CSVSeries>
+                  </series>
+                  <group>Message Flow Coverage Tool</group>
+                  <numBuilds>1</numBuilds>
+                  <csvFileName>85661855.csv</csvFileName>
+                  <csvLastModification>0</csvLastModification>
+                  <style>bar</style>
+                  <useDescr>false</useDescr>
+                  <keepRecords>false</keepRecords>
+                  <exclZero>false</exclZero>
+                  <logarithmic>false</logarithmic>
+                </hudson.plugins.plot.Plot>
+              </plots>
+            </hudson.plugins.plot.PlotPublisher>
+            <EnvInjectBuilder plugin="envinject@2.1">
+              <info>
+                <propertiesFilePath>$WORKSPACE/EnvironmentVar_${BUILD_ID}.properties</propertiesFilePath>
+              </info>
+            </EnvInjectBuilder>
+          </publisherList>
+          <runner class="org.jenkins_ci.plugins.run_condition.BuildStepRunner$Fail" plugin="run-condition@1.0"/>
+          <executionStrategy class="org.jenkins_ci.plugins.flexible_publish.strategy.FailAtEndExecutionStrategy"/>
+        </org.jenkins__ci.plugins.flexible__publish.ConditionalPublisher>
+        <org.jenkins__ci.plugins.flexible__publish.ConditionalPublisher>
+          <condition class="org.jenkins_ci.plugins.run_condition.logic.Or" plugin="run-condition@1.0">
+            <conditions>
+              <org.jenkins__ci.plugins.run__condition.logic.ConditionContainer>
+                <condition class="org.jenkins_ci.plugins.run_condition.core.NumericalComparisonCondition">
+                  <lhs>$COVERAGE_RESULT</lhs>
+                  <rhs>75</rhs>
+                  <comparator class="org.jenkins_ci.plugins.run_condition.core.NumericalComparisonCondition$LessThan"/>
+                </condition>
+              </org.jenkins__ci.plugins.run__condition.logic.ConditionContainer>
+              <org.jenkins__ci.plugins.run__condition.logic.ConditionContainer>
+                <condition class="org.jenkins_ci.plugins.run_condition.core.NumericalComparisonCondition">
+                  <lhs>$TOTALTESTFAIL</lhs>
+                  <rhs>2</rhs>
+                  <comparator class="org.jenkins_ci.plugins.run_condition.core.NumericalComparisonCondition$GreaterThanOrEqualTo"/>
+                </condition>
+              </org.jenkins__ci.plugins.run__condition.logic.ConditionContainer>
+            </conditions>
+          </condition>
+          <publisherList>
+            <hudson.tasks.BuildTrigger>
+              <childProjects>Rollback_DEV</childProjects>
+              <threshold>
+                <name>SUCCESS</name>
+                <ordinal>0</ordinal>
+                <color>BLUE</color>
+                <completeBuild>true</completeBuild>
+              </threshold>
+            </hudson.tasks.BuildTrigger>
+          </publisherList>
+          <runner class="org.jenkins_ci.plugins.run_condition.BuildStepRunner$Fail" plugin="run-condition@1.0"/>
+          <executionStrategy class="org.jenkins_ci.plugins.flexible_publish.strategy.FailAtEndExecutionStrategy"/>
+        </org.jenkins__ci.plugins.flexible__publish.ConditionalPublisher>
+        <org.jenkins__ci.plugins.flexible__publish.ConditionalPublisher>
+          <condition class="org.jenkins_ci.plugins.run_condition.logic.And" plugin="run-condition@1.0">
+            <conditions>
+              <org.jenkins__ci.plugins.run__condition.logic.ConditionContainer>
+                <condition class="org.jenkins_ci.plugins.run_condition.core.NumericalComparisonCondition">
+                  <lhs>$COVERAGE_RESULT</lhs>
+                  <rhs>75</rhs>
+                  <comparator class="org.jenkins_ci.plugins.run_condition.core.NumericalComparisonCondition$GreaterThanOrEqualTo"/>
+                </condition>
+              </org.jenkins__ci.plugins.run__condition.logic.ConditionContainer>
+              <org.jenkins__ci.plugins.run__condition.logic.ConditionContainer>
+                <condition class="org.jenkins_ci.plugins.run_condition.core.NumericalComparisonCondition">
+                  <lhs>$TOTALTESTFAIL</lhs>
+                  <rhs>1</rhs>
+                  <comparator class="org.jenkins_ci.plugins.run_condition.core.NumericalComparisonCondition$LessThanOrEqualTo"/>
+                </condition>
+              </org.jenkins__ci.plugins.run__condition.logic.ConditionContainer>
+            </conditions>
+          </condition>
+          <publisherList>
+            <hudson.tasks.BuildTrigger>
+              <childProjects>SIT_Deploy</childProjects>
+              <threshold>
+                <name>SUCCESS</name>
+                <ordinal>0</ordinal>
+                <color>BLUE</color>
+                <completeBuild>true</completeBuild>
+              </threshold>
+            </hudson.tasks.BuildTrigger>
+          </publisherList>
+          <runner class="org.jenkins_ci.plugins.run_condition.BuildStepRunner$Fail" plugin="run-condition@1.0"/>
+          <executionStrategy class="org.jenkins_ci.plugins.flexible_publish.strategy.FailAtEndExecutionStrategy"/>
+        </org.jenkins__ci.plugins.flexible__publish.ConditionalPublisher>
+      </publishers>
+    </org.jenkins__ci.plugins.flexible__publish.FlexiblePublisher>
+  </publishers>
+  <buildWrappers>
+    <org.jenkinsci.plugins.xvfb.Xvfb plugin="xvfb@1.1.3">
+      <installationName>XVfb1</installationName>
+      <displayName>5</displayName>
+      <screen></screen>
+      <debug>false</debug>
+      <timeout>0</timeout>
+      <displayNameOffset>1</displayNameOffset>
+      <additionalOptions></additionalOptions>
+      <shutdownWithBuild>false</shutdownWithBuild>
+      <autoDisplayName>false</autoDisplayName>
+      <assignedLabels></assignedLabels>
+      <parallelBuild>false</parallelBuild>
+    </org.jenkinsci.plugins.xvfb.Xvfb>
+    <hudson.plugins.ws__cleanup.PreBuildCleanup plugin="ws-cleanup@0.32">
+      <deleteDirs>false</deleteDirs>
+      <cleanupParameter></cleanupParameter>
+      <externalDelete></externalDelete>
+    </hudson.plugins.ws__cleanup.PreBuildCleanup>
+  </buildWrappers>
+</project>
